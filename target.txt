@@ -1,0 +1,55 @@
+Gear_Design_Automation/
+
+📁
+calculations/
+Gear design calculations
+
+
+📁
+profiles/
+Involute profile coordinates
+
+
+📁
+solidworks/
+CAD automation and exported models
+
+
+📁
+results/
+Plots, reports, and calculation outputs
+
+
+📁
+tests/
+Testing individual formulas
+
+
+🐍
+main.py
+Main program
+
+
+🐍
+gear_calculations.py
+Design calculations
+
+
+🐍
+involute_profile.py
+Involute geometry
+
+
+🐍
+solidworks_automation.py
+SolidWorks automation
+
+
+📄
+requirements.txt
+Python package list
+
+
+📄
+README.md
+Project documentation

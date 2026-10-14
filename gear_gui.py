@@ -50,6 +50,14 @@ def open_report_window(title_text, report_text, next_callback=None):
     window.protocol("WM_DELETE_WINDOW", save_and_close)
 
 
+def show_profile_report():
+    open_report_window(
+        "Gear Profile Calculation Report",
+        profile["report"],
+        next_callback=show_profile_plot,
+    )
+
+
 def show_profile_plot():
     root.destroy()
     generate_involute_profile(m=design["m"], z=design["z"], pressure_angle=design["pressure_angle"])
@@ -61,11 +69,7 @@ profile = generate_profile_report(design["m"], design["z"], design["pressure_ang
 open_report_window(
     "Gear Design Report",
     design["report"],
-    next_callback=lambda: open_report_window(
-        "Gear Profile Calculation Report",
-        profile["report"],
-        next_callback=show_profile_plot,
-    ),
+    next_callback=show_profile_report,
 )
 
 root.mainloop()

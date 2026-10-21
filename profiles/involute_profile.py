@@ -36,28 +36,57 @@ def generate_profile_report(m, z, pressure_angle):
     return {"m": m, "z": z, "pressure_angle": pressure_angle, "report": "\n".join(lines)}
 
 
-def generate_involute_profile(m, z, pressure_angle):
+
+
+def generate_involute_profile(
+    m,
+    z,
+    pressure_angle,
+    ax=None,
+    center=(0, 0),
+    involute_color='steelblue',
+    pitch_color='#b8c5d9',
+    base_color='#d9d3bd',
+    addendum_color='#c7d9c1',
+    root_color='#d9c1c1',
+    rotation=0.0,
+):
+    own_plot = ax is None
+
+    if own_plot:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    cx, cy = center
+
+    def plot(x, y, *args, **kwargs):
+        ax.plot(
+            np.asarray(x) + cx,
+            np.asarray(y) + cy,
+            *args,
+            **kwargs
+        )
+
     report = generate_profile_report(m, z, pressure_angle)
+
     r_p = m * z / 2
     phi = np.radians(pressure_angle)
     r_b = r_p * math.cos(phi)
     r_a = r_p + m
-    r_r = r_p - (1.25 * m)
+    r_r = r_p - 1.25 * m
 
-    print(f"pitch circle radius: {r_p}")
-    print(f'base radius :{r_b}')
-    print(f'addendum cicle radius: {r_a}')
-    print(f'root circle radius: {r_r}')
+    print(f"Pitch circle radius: {r_p}")
+    print(f"Base circle radius: {r_b}")
+    print(f"Addendum circle radius: {r_a}")
+    print(f"Root circle radius: {r_r}")
 
     angles = np.linspace(0, 2 * np.pi, 360)
-    x_p = r_p * np.cos(angles)
-    y_p = r_p * np.sin(angles)
-    x_b = r_b * np.cos(angles)
-    y_b = r_b * np.sin(angles)
-    x_a = r_a * np.cos(angles)
-    y_a = r_a * np.sin(angles)
-    x_r = r_r * np.cos(angles)
-    y_r = r_r * np.sin(angles)
+
+    x_p, y_p = r_p * np.cos(angles), r_p * np.sin(angles)
+    x_b, y_b = r_b * np.cos(angles), r_b * np.sin(angles)
+    x_a, y_a = r_a * np.cos(angles), r_a * np.sin(angles)
+    x_r, y_r = r_r * np.cos(angles), r_r * np.sin(angles)
 
     t_max = math.sqrt((r_a / r_b) ** 2 - 1)
     t = np.linspace(0, t_max, 100)
@@ -65,37 +94,38 @@ def generate_involute_profile(m, z, pressure_angle):
     inv_phi = np.tan(phi) - phi
     offset = (np.pi / (2 * z)) - inv_phi
 
-    x_inv = r_b * (np.cos(t) + (t * np.sin(t)))
-    y_inv = r_b * (np.sin(t) - (t * np.cos(t)))
+    x_inv = r_b * (np.cos(t) + t * np.sin(t))
+    y_inv = r_b * (np.sin(t) - t * np.cos(t))
 
-    pitch_color = '#b8c5d9'
-    base_color = '#d9d3bd'
-    addendum_color = '#c7d9c1'
-    root_color = '#d9c1c1'
-    involute_color = 'steelblue'
+    # colors can be overridden by callers via function parameters
 
-    plt.plot(x_p, y_p, label='Pitch circle', linestyle='--', color=pitch_color, alpha=0.9)
-    plt.plot(x_b, y_b, label='base circle', linestyle='--', color=base_color, alpha=0.9)
-    plt.plot(x_a, y_a, label='addendum circle', linestyle='--', color=addendum_color, alpha=0.9)
-    plt.plot(x_r, y_r, label='root circle', linestyle='--', color=root_color, alpha=0.9)
+    # Reference circles
+    plot(x_p, y_p, label='Pitch circle', linestyle='--',
+         color=pitch_color, alpha=0.9)
+    plot(x_b, y_b, label='Base circle', linestyle='--',
+         color=base_color, alpha=0.9)
+    plot(x_a, y_a, label='Addendum circle', linestyle='--',
+         color=addendum_color, alpha=0.9)
+    plot(x_r, y_r, label='Root circle', linestyle='--',
+         color=root_color, alpha=0.9)
 
     right_tips = []
     left_tips = []
 
     for i in range(z):
         teeth_angle = i * 2 * np.pi / z
-        angle_right = teeth_angle + offset
-        angle_left = teeth_angle - offset
+        # apply an optional global rotation to the tooth pair
+        angle_right = teeth_angle + offset + rotation
+        angle_left = teeth_angle - offset + rotation
 
-        x_right = (x_inv * np.cos(angle_right)) - (y_inv * np.sin(angle_right))
-        y_right = (x_inv * np.sin(angle_right)) + (y_inv * np.cos(angle_right))
-        x_left = (x_inv * np.cos(angle_left)) + (y_inv * np.sin(angle_left))
-        y_left = (x_inv * np.sin(angle_left)) - (y_inv * np.cos(angle_left))
+        x_right = x_inv * np.cos(angle_right) - y_inv * np.sin(angle_right)
+        y_right = x_inv * np.sin(angle_right) + y_inv * np.cos(angle_right)
 
-        x_start_right = x_right[0]
-        y_start_right = y_right[0]
-        x_start_left = x_left[0]
-        y_start_left = y_left[0]
+        x_left = x_inv * np.cos(angle_left) + y_inv * np.sin(angle_left)
+        y_left = x_inv * np.sin(angle_left) - y_inv * np.cos(angle_left)
+
+        x_start_right, y_start_right = x_right[0], y_right[0]
+        x_start_left, y_start_left = x_left[0], y_left[0]
 
         theta_right = np.arctan2(y_start_right, x_start_right)
         theta_left = np.arctan2(y_start_left, x_start_left)
@@ -108,38 +138,61 @@ def generate_involute_profile(m, z, pressure_angle):
         right_tips.append((x_right[-1], y_right[-1]))
         left_tips.append((x_left[-1], y_left[-1]))
 
-        plt.plot(x_right, y_right, color=involute_color, linewidth=2)
-        plt.plot(x_left, y_left, color=involute_color, linewidth=2)
-        plt.plot(
+        plot(x_right, y_right, color=involute_color, linewidth=2)
+        plot(x_left, y_left, color=involute_color, linewidth=2)
+
+        plot(
             np.linspace(x_start_right, x_root_right, 100),
             np.linspace(y_start_right, y_root_right, 100),
-            color=involute_color,
-            linewidth=2,
+            color=involute_color, linewidth=2
         )
-        plt.plot(
+
+        plot(
             np.linspace(x_start_left, x_root_left, 100),
             np.linspace(y_start_left, y_root_left, 100),
-            color=involute_color,
-            linewidth=2,
+            color=involute_color, linewidth=2
         )
-        plt.plot([x_root_left, x_root_right], [y_root_left, y_root_right], color=involute_color, linewidth=2)
+
+        plot(
+            [x_root_left, x_root_right],
+            [y_root_left, y_root_right],
+            color=involute_color, linewidth=2
+        )
 
     for i in range(z):
         x1, y1 = right_tips[i]
         x2, y2 = left_tips[(i + 1) % z]
-        plt.plot([x1, x2], [y1, y2], color=involute_color, linewidth=2)
+        plot([x1, x2], [y1, y2], color=involute_color, linewidth=2)
 
-    plt.tight_layout()
-    plt.axis('Equal')
-    plt.legend(loc='upper left')
+    ax.set_aspect('equal', adjustable='datalim')
 
-    figures_dir = Path(__file__).resolve().parent.parent / 'figures'
-    figures_dir.mkdir(exist_ok=True)
-    save_path = figures_dir / 'gear_profile.png'
-    plt.savefig(save_path)
-    print(f"Saved profile image to: {save_path}")
-    print(report["report"])
-    plt.show()
+    # Only save and display when used as a standalone plot
+    if own_plot:
+        ax.legend(loc='upper left')
+        fig.tight_layout()
+
+        figures_dir = Path(__file__).resolve().parent.parent / 'figures'
+        figures_dir.mkdir(exist_ok=True)
+
+        save_path = figures_dir / 'gear_profile.png'
+        fig.savefig(save_path, dpi=300, bbox_inches='tight')
+
+        print(f"Saved profile image to: {save_path}")
+        print(report["report"])
+
+        plt.show()
+
+    return {
+        "module": m,
+        "teeth": z,
+        "pressure_angle": pressure_angle,
+        "pitch_radius": r_p,
+        "base_radius": r_b,
+        "addendum_radius": r_a,
+        "root_radius": r_r,
+        "center": center,
+    }
+
 
 
 if __name__ == "__main__":

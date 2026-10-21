@@ -3,6 +3,7 @@ from pathlib import Path
 
 from calculations.gear_calculation import calculate_gear_design
 from profiles.involute_profile import generate_involute_profile, generate_profile_report
+from validation.gear_mesh_validation import validate_gear_mesh, build_mesh_validation_report
 
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
@@ -50,6 +51,14 @@ def open_report_window(title_text, report_text, next_callback=None):
     window.protocol("WM_DELETE_WINDOW", save_and_close)
 
 
+def show_mesh_validation_report():
+    open_report_window(
+        "Gear Mesh Validation Report",
+        mesh_report,
+        next_callback=show_profile_report,
+    )
+
+
 def show_profile_report():
     open_report_window(
         "Gear Profile Calculation Report",
@@ -64,12 +73,30 @@ def show_profile_plot():
 
 
 design = calculate_gear_design()
+
+design["Z_p"] = design.get("Z_p", design.get("z"))
+design["Z_g"] = design.get("Z_g", int(design["Z_p"] * design["i"]))
+design["D_p"] = design.get("D_p", design["m"] * design["Z_p"])
+design["D_g"] = design.get("D_g", design["m"] * design["Z_g"])
+
+mesh_checks = validate_gear_mesh(design)
+mesh_report = build_mesh_validation_report(design, mesh_checks)
+
+if not mesh_checks.get("overall_pass", False):
+    open_report_window(
+        "Gear Mesh Validation Report",
+        mesh_report,
+        next_callback=root.destroy,
+    )
+    root.mainloop()
+    raise SystemExit
+
 profile = generate_profile_report(design["m"], design["z"], design["pressure_angle"])
 
 open_report_window(
     "Gear Design Report",
     design["report"],
-    next_callback=show_profile_report,
+    next_callback=show_mesh_validation_report,
 )
 
 root.mainloop()

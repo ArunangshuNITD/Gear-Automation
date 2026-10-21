@@ -288,6 +288,12 @@ def calculate_gear_design():
         "z": Z_p,
         "pressure_angle": pressure_angle,
         "report": "\n".join(lines),
+        "i":i,
+        "weaker member":weaker_member,
+        "D_p":D_p_candidate,
+        "D_g":D_g_candidate,
+        "Z_p":Z_p,
+        "Z_g":Z_g,
     }
 
 

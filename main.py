@@ -6,6 +6,7 @@ import csv
 from calculations.gear_calculation import calculate_gear_design
 from profiles.involute_profile import generate_involute_profile, generate_profile_report
 from validation.gear_mesh_validation import validate_gear_mesh, build_mesh_validation_report
+from models.spur_gear_model import draw_gear_in_solidworks
 from profiles.extract_3d_profile import get_continuous_gear_profile
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"

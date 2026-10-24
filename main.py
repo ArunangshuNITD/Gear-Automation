@@ -1,10 +1,12 @@
 import tkinter as tk
 from pathlib import Path
 import runpy
+import csv
 
 from calculations.gear_calculation import calculate_gear_design
 from profiles.involute_profile import generate_involute_profile, generate_profile_report
 from validation.gear_mesh_validation import validate_gear_mesh, build_mesh_validation_report
+from profiles.extract_3d_profile import get_continuous_gear_profile
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -83,7 +85,14 @@ def show_profile_plot():
         z=design["z"],
         pressure_angle=design["pressure_angle"],
     )
-
+    points=get_continuous_gear_profile(m=design["m"],z=design["z"],pressure_angle=design["pressure_angle"])
+    csv_path=RESULTS_DIR/"gear_3d_profile_points.csv"
+    
+    with open(csv_path,'w',newline='') as f:
+        writer=csv.writer(f)
+        writer.writerow(['X (mm)', 'Y (mm)', 'Z (mm)'])
+        writer.writerows(points)
+    print(f"Saved {len(points)} continuous 3D points to: {csv_path}")
 
 def main():
     global design
@@ -113,6 +122,7 @@ def main():
         design["report"],
         next_callback=show_mesh_validation_report,
     )
+    
     root.mainloop()
 
 

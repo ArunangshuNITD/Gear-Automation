@@ -1,39 +1,41 @@
 # Gear Design Workflow
 
-This document explains the operational flow of the gear design automation project.
+This document describes the current operational flow of the gear design automation project as implemented in the codebase.
 
-## 1. Main sequence
+## 1. Main execution path
 
-The application is intended to run in this order:
+The application begins in `main.py` and follows this sequence:
 
-1. Calculate the gear design
-2. Validate the gear mesh geometry
-3. Generate the gear profile report
-4. Plot the involute gear profile
+1. `calculate_gear_design()` from `calculations/gear_calculation.py`
+2. Mesh validation via `validate_gear_mesh()` in `validation/gear_mesh_validation.py`
+3. Profile report generation via `generate_profile_report()` in `profiles/involute_profile.py`
+4. Involute plot generation via `generate_involute_profile()`
+5. Optional paired-gear plot execution from `profiles/gear_pair.py`
 
 ---
 
-## 2. Step 1 — Gear design calculation
+## 2. Design calculation stage
 
 The first stage is handled by:
 
 - `calculations/gear_calculation.py`
 - `calculate_gear_design()`
 
-This function computes:
+This function computes the design data for a spur gear pair, including:
 
 - module `m`
-- pinion tooth count `Z_p`
-- gear tooth count `Z_g`
+- pinion teeth `Z_p`
+- gear teeth `Z_g`
 - pitch diameters `D_p`, `D_g`
-- speed ratio `i`
+- ratio `i`
 - design report text
+- selected standard module and safety checks
 
-The result is returned as a dictionary containing the design values and a human-readable report.
+The function returns a dictionary with the computed values and a formatted report string.
 
 ---
 
-## 3. Step 2 — Gear mesh validation
+## 3. Validation stage
 
 The next stage is handled by:
 
@@ -41,9 +43,7 @@ The next stage is handled by:
 - `validate_gear_mesh(d)`
 - `build_mesh_validation_report(d, checks)`
 
-This validation checks whether the gear geometry is internally consistent before profile generation begins.
-
-The required keys are:
+The project currently validates the mesh using these required fields:
 
 - `m`
 - `Z_p`
@@ -52,24 +52,24 @@ The required keys are:
 - `D_g`
 - `i`
 
-The validation checks are:
+The checks performed are:
 
-- pinion pitch diameter: `m * Z_p == D_p`
-- gear pitch diameter: `m * Z_g == D_g`
-- transmission ratio: `i == Z_g / Z_p`
+- pinion pitch diameter: `abs(m * Z_p - D_p) < 1e-6`
+- gear pitch diameter: `abs(m * Z_g - D_g) < 1e-6`
+- transmission ratio: `abs(i - (Z_g / Z_p)) < 1e-6`
 
-If any required value is missing or the checks fail, the workflow should stop and show the mesh validation report.
+If any required field is missing or any check fails, the workflow stops before profile generation and opens the validation report.
 
 ---
 
-## 4. Step 3 — Profile calculation report
+## 4. Profile report stage
 
-If validation passes, the next step is:
+If validation passes, the workflow creates a profile report using:
 
 - `profiles/involute_profile.py`
 - `generate_profile_report(m, z, pressure_angle)`
 
-This builds a text report containing the gear profile data such as:
+This report contains:
 
 - pitch circle radius
 - base circle radius
@@ -77,59 +77,60 @@ This builds a text report containing the gear profile data such as:
 - root radius
 - pitch diameter
 - base diameter
-
-This report is then shown in the Tkinter window.
+- circular pitch
+- tooth thickness at pitch
 
 ---
 
-## 5. Step 4 — Gear profile plot
+## 5. Plot generation stage
 
-After the profile report, the program calls:
+After the profile report is created, the program calls:
 
 - `generate_involute_profile(m, z, pressure_angle)`
 
-This function draws the tooth geometry as an involute profile and saves the output image to:
+This function draws the involute tooth geometry and saves the output to:
 
 - `figures/gear_profile.png`
+
+The script also runs `profiles/gear_pair.py` after the GUI workflow so the pair visualization can be generated as a follow-up step.
 
 ---
 
 ## 6. GUI flow
 
-The GUI sequence is expected to be:
+The GUI sequence is:
 
 1. Design report
 2. Mesh validation report
 3. Profile report
 4. Profile plot
 
-This is handled in the main application flow and reflected in the current report windows.
+This behavior is implemented in `main.py` with `open_report_window()` and the callback chain.
 
 ---
 
 ## 7. Stop condition
 
-If the mesh validation returns `overall_pass == False`, the application is designed to stop before the gear profile calculation and plot are created. This prevents invalid gear geometry from being visualized.
+If `validate_gear_mesh()` returns `overall_pass == False`, the program is designed to stop before creating the gear profile calculations and plots.
+
+This prevents invalid gear geometry from being visualized or exported.
 
 ---
 
-## 8. Example of the logic
+## 8. Current design baseline
 
-```python
-design = calculate_gear_design()
+The current project is using:
 
-design["Z_p"] = design.get("Z_p", design.get("z"))
-design["Z_g"] = design.get("Z_g", int(design["Z_p"] * design["i"]))
-design["D_p"] = design.get("D_p", design["m"] * design["Z_p"])
-design["D_g"] = design.get("D_g", design["m"] * design["Z_g"])
+- module: `12 mm`
+- pinion teeth: `18`
+- gear teeth: `72`
+- gear ratio: `4:1`
+- pressure angle: `20 deg`
 
-mesh_checks = validate_gear_mesh(design)
-if not mesh_checks.get("overall_pass", False):
-    show_mesh_validation_report()
-    return
+The corresponding mesh is validated as:
 
-profile = generate_profile_report(design["m"], design["z"], design["pressure_angle"])
-generate_involute_profile(design["m"], design["z"], design["pressure_angle"])
-```
+- `D_p = m * Z_p = 216 mm`
+- `D_g = m * Z_g = 864 mm`
+- `i = Z_g / Z_p = 4`
 
-This is the intended control flow for the automation process.
+This is the baseline used by the current automated workflow.

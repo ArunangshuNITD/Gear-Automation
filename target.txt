@@ -1,55 +1,40 @@
-Gear_Design_Automation/
+Gear Design Automation - current project target
 
-📁
-calculations/
-Gear design calculations
+Status:
+- Core design, validation, and profile-generation workflow is implemented.
+- The current project is focused on a spur gear sizing and profile automation prototype.
 
+Primary workflow:
+1. Run main.py to start the design workflow.
+2. calculate_gear_design() in calculations/gear_calculation.py calculates the gear sizing.
+3. Main normalizes the design dictionary and validates the mesh in validation/gear_mesh_validation.py.
+4. If validation passes, generate_profile_report() creates the profile report.
+5. generate_involute_profile() plots the involute gear profile and saves figures/gear_profile.png.
+6. profiles/gear_pair.py is executed afterward to generate the paired gear visualization.
 
-📁
-profiles/
-Involute profile coordinates
+Current design baseline:
+- Module m: 12 mm
+- Pinion teeth Z_p: 18
+- Gear teeth Z_g: 72
+- Gear ratio i: 4
+- Pressure angle: 20 deg
+- Pinion pitch diameter D_p: 216 mm
+- Gear pitch diameter D_g: 864 mm
 
+Required validation checks:
+- abs(m * Z_p - D_p) < 1e-6
+- abs(m * Z_g - D_g) < 1e-6
+- abs(i - (Z_g / Z_p)) < 1e-6
 
-📁
-solidworks/
-CAD automation and exported models
+Output files:
+- results/gear_calculation_report.txt
+- results/gear_profile_calculation_report.txt
+- results/gear_mesh_validation_report.txt (generated during workflow execution)
+- figures/gear_profile.png
 
-
-📁
-results/
-Plots, reports, and calculation outputs
-
-
-📁
-tests/
-Testing individual formulas
-
-
-🐍
-main.py
-Main program
-
-
-🐍
-gear_calculations.py
-Design calculations
-
-
-🐍
-involute_profile.py
-Involute geometry
-
-
-🐍
-solidworks_automation.py
-SolidWorks automation
-
-
-📄
-requirements.txt
-Python package list
-
-
-📄
-README.md
-Project documentation
+Key source files:
+- main.py
+- calculations/gear_calculation.py
+- validation/gear_mesh_validation.py
+- profiles/involute_profile.py
+- profiles/gear_pair.py
